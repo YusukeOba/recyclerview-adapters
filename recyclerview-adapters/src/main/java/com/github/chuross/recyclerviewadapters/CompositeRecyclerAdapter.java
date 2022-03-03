@@ -22,6 +22,7 @@ import static com.github.chuross.recyclerviewadapters.internal.RecyclerAdaptersU
 public class CompositeRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements LocalAdapter<RecyclerView.ViewHolder> {
 
     private List<LocalAdapter<?>> localAdapters = new ArrayList<>();
+    private List<LocalAdapterDataObserver> observers = new ArrayList<>();
     private Map<Integer, LocalAdapter<?>> localAdapterMapping = new HashMap<>();
     private Map<Integer, LocalAdapter<?>> unstableAdapterMapping = new HashMap<>();
     private WeakReference<RecyclerView> recyclerView;
@@ -228,7 +229,9 @@ public class CompositeRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.
         for (LocalAdapter localAdapter : localAdapters) {
             if (localAdapter.hasStableItemViewType())
                 localAdapterMapping.put(localAdapter.getAdapterId(), localAdapter);
-            localAdapter.bindParentAdapter(this, new LocalAdapterDataObserver(this, localAdapter));
+            final LocalAdapterDataObserver observer = new LocalAdapterDataObserver(this, localAdapter);
+            localAdapter.bindParentAdapter(this, observer);
+            observers.add(observer);
             if (hasRecyclerView()) localAdapter.onAttachedToRecyclerView(recyclerView.get());
         }
         notifyDataSetChanged();
@@ -252,6 +255,10 @@ public class CompositeRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.
         localAdapters.clear();
         localAdapterMapping.clear();
         unstableAdapterMapping.clear();
+        for (LocalAdapterDataObserver observer : observers) {
+            unregisterAdapterDataObserver(observer);
+        }
+        observers.clear();
         notifyDataSetChanged();
     }
 
