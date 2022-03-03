@@ -14,6 +14,7 @@ public abstract class BaseLocalAdapter<VH extends RecyclerView.ViewHolder> exten
     private WeakReference<CompositeRecyclerAdapter> parentAdapter;
     private boolean visible = true;
     private boolean isAttached = false;
+    private WeakReference<RecyclerView.AdapterDataObserver> observer;
 
     public BaseLocalAdapter(@NonNull Context context) {
         this.context = context;
@@ -99,12 +100,20 @@ public abstract class BaseLocalAdapter<VH extends RecyclerView.ViewHolder> exten
         }
         parentAdapter = new WeakReference<>(adapter);
         registerAdapterDataObserver(dataObserver);
+        observer = new WeakReference<>(dataObserver);
     }
 
     @Override
     public void unBindParentAdapter() {
         parentAdapter.clear();
         parentAdapter = null;
+        try {
+            if (observer != null && observer.get() != null) {
+                unregisterAdapterDataObserver(observer.get());
+                observer.clear();
+                observer = null;
+            }
+        } catch (Exception e) {}
     }
 
     @Override
